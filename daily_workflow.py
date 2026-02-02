@@ -211,49 +211,74 @@ The post content is about: {post_text[:300]}"""
     try:
         logger.info("Calling Gemini Imagen API...")
         # Use Gemini's Imagen API for image generation
-        imagen_url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages"
+        # Correct endpoint format: imagen-4.0-generate-001:predict
+        imagen_url = "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict"
         
         headers = {
             "Content-Type": "application/json",
+            "x-goog-api-key": GEMINI_API_KEY
         }
         
-        params = {
-            "key": GEMINI_API_KEY
-        }
-        
+        # Correct payload format for Imagen API
         payload = {
-            "prompt": image_prompt,
-            "numberOfImages": 1,
-            "aspectRatio": "1:1",  # Square for LinkedIn
-            "safetyFilterLevel": "block_some",
-            "personGeneration": "allow_all"
+            "instances": [
+                {
+                    "prompt": image_prompt
+                }
+            ],
+            "parameters": {
+                "sampleCount": 1,
+                "aspectRatio": "1:1",  # Square for LinkedIn
+                "safetyFilterLevel": "block_some",
+                "personGeneration": "allow_all"
+            }
         }
         
-        response = requests.post(imagen_url, headers=headers, params=params, json=payload)
+        logger.debug(f"Imagen API URL: {imagen_url}")
+        logger.debug(f"Payload keys: {list(payload.keys())}")
+        
+        response = requests.post(imagen_url, headers=headers, json=payload)
         logger.info(f"Gemini API response status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
             logger.info("Gemini API response received successfully")
+            logger.debug(f"Response keys: {list(result.keys())}")
             
-            # Imagen returns generatedImages array
-            if "generatedImages" in result and len(result["generatedImages"]) > 0:
-                image_data = result["generatedImages"][0]
-                logger.info("Image data extracted from response")
+            # Imagen API returns predictions array
+            if "predictions" in result and len(result["predictions"]) > 0:
+                prediction = result["predictions"][0]
+                logger.info("Image prediction extracted from response")
+                logger.debug(f"Prediction keys: {list(prediction.keys())}")
                 
-                # Return base64 encoded image or URL
-                if "imageBytes" in image_data:
-                    logger.info("Using base64 encoded image")
-                    return f"data:image/png;base64,{image_data['imageBytes']}"
-                elif "imageUrl" in image_data:
-                    logger.info(f"Using image URL: {image_data['imageUrl']}")
-                    return image_data["imageUrl"]
+                # Check for base64 encoded image
+                if "bytesBase64Encoded" in prediction:
+                    logger.info("Using base64 encoded image from prediction")
+                    return f"data:image/png;base64,{prediction['bytesBase64Encoded']}"
+                elif "mimeType" in prediction and "bytesBase64Encoded" in prediction:
+                    mime_type = prediction.get("mimeType", "image/png")
+                    logger.info(f"Using base64 encoded image (mime: {mime_type})")
+                    return f"data:{mime_type};base64,{prediction['bytesBase64Encoded']}"
                 else:
-                    logger.warning("Unexpected Imagen response format - no imageBytes or imageUrl found")
-                    logger.debug(f"Response structure: {list(image_data.keys())}")
+                    logger.warning("Unexpected Imagen response format - no bytesBase64Encoded found")
+                    logger.debug(f"Prediction structure: {prediction}")
                     return None
             else:
-                logger.warning("No images in Gemini response")
+                logger.warning("No predictions in Gemini response")
+                logger.debug(f"Response structure: {result}")
+                return None
+        elif response.status_code == 400:
+            error_data = response.json()
+            error_msg = error_data.get("error", {}).get("message", "")
+            
+            if "billed users" in error_msg.lower() or "billing" in error_msg.lower():
+                logger.warning("Imagen API requires a paid Google Cloud account with billing enabled")
+                logger.info("Skipping image generation - Imagen API is not available for free tier")
+                logger.info("Tip: Enable billing in Google Cloud Console to use Imagen API")
+                return None
+            else:
+                logger.error(f"Gemini Imagen API error: {response.status_code}")
+                logger.error(f"Response: {response.text}")
                 return None
         else:
             logger.error(f"Gemini Imagen API error: {response.status_code}")
