@@ -1,0 +1,52 @@
+name: Daily Pipeline
+
+on:
+  schedule:
+    # Runs every day at 10:00 AM PST (18:00 UTC)
+    # PST is UTC-8, so 10 AM PST = 6 PM UTC
+    - cron: '0 18 * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  daily-job:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv sync
+      
+      - name: Set up environment variables
+        env:
+          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+          GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
+          Groq_Api_Key: ${{ secrets.GROQ_API_KEY }}
+          Gemini_Api_Key: ${{ secrets.GEMINI_API_KEY }}
+          CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          access_token: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+        run: |
+          echo "Environment variables set"
+      
+      - name: Run daily workflow
+        env:
+          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+          GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
+          Groq_Api_Key: ${{ secrets.GROQ_API_KEY }}
+          Gemini_Api_Key: ${{ secrets.GEMINI_API_KEY }}
+          CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          access_token: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+        run: |
+          uv run daily_workflow.py

@@ -8,3 +8,14 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Environment secrets
+.env
+
+# Logs
+logs/
+*.log
+
+# DSPy learning data
+dspy_examples.json
+dspy_metrics.json

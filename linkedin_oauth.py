@@ -3,8 +3,12 @@ import requests
 import webbrowser
 from urllib.parse import urlparse, parse_qs
 
-CLIENT_ID = "864cfuax4q6hds"
-CLIENT_SECRET = os.environ.get("LINKEDIN_CLIENT_SECRET", "")
+from dotenv import load_dotenv
+
+load_dotenv()
+
+CLIENT_ID = os.environ.get("CLIENT_ID", "")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET", "")
 REDIRECT_URI = "https://example.com/auth/linkedin/callback"
 
 AUTH_URL = (
@@ -12,7 +16,7 @@ AUTH_URL = (
     "?response_type=code"
     f"&client_id={CLIENT_ID}"
     f"&redirect_uri={REDIRECT_URI}"
-    "&scope=w_member_social"
+    "&scope=w_member_social openid profile"
     "&state=123456"
 )
 
