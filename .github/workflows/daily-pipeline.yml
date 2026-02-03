@@ -2,13 +2,10 @@ name: Daily Pipeline
 
 on:
   schedule:
-    # Runs every day at 10:00 AM Pacific Time
-    # Note: Pacific Time alternates between PST (UTC-8) and PDT (UTC-7) for daylight saving
-    # 10 AM PST = 18:00 UTC, 10 AM PDT = 17:00 UTC
-    # Using 18:00 UTC to target 10 AM PST (winter time)
-    # During PDT (summer), this will run at 11 AM instead of 10 AM
-    # To always run at 10 AM PT, you'd need to adjust manually for DST
-    - cron: '0 18 * * *'
+    # TESTING: Runs every day at 12:35 PM PST (20:35 UTC)
+    # PST is UTC-8, so 12:35 PM PST = 8:35 PM UTC (20:35)
+    # TODO: Change back to 10:00 AM PST (18:00 UTC) after testing
+    - cron: '35 20 * * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
