@@ -74,6 +74,13 @@ ACCESS_TOKEN = os.environ.get("access_token", "")
 PERSON_URN = os.environ.get("PERSON_URN", "").strip()
 BASE_URL = "https://api.linkedin.com/v2"
 
+# Debug: Log environment variable status (without exposing values)
+IS_GITHUB_ACTIONS = os.environ.get("GITHUB_ACTIONS") == "true"
+if IS_GITHUB_ACTIONS:
+    logger.info("Running in GitHub Actions environment")
+    logger.info(f"Environment variables present: access_token={'Yes' if ACCESS_TOKEN else 'No'}, PERSON_URN={'Yes' if PERSON_URN else 'No'}")
+    logger.info(f"GitHub secrets configured: GIT_TOKEN={'Yes' if os.environ.get('GIT_TOKEN') else 'No'}, Groq_Api_Key={'Yes' if GROQ_API_KEY else 'No'}")
+
 # DSPy configuration
 DSPY_EXAMPLES_FILE = Path("dspy_examples.json")
 DSPY_METRICS_FILE = Path("dspy_metrics.json")
@@ -298,7 +305,7 @@ def upload_image_to_linkedin(image_url_or_data):
     logger.info("Starting LinkedIn image upload process...")
     
     if not ACCESS_TOKEN:
-        raise ValueError("access_token not set in .env")
+        raise ValueError("access_token not set. Set LINKEDIN_ACCESS_TOKEN secret in GitHub Actions or access_token in .env file.")
     
     try:
         author_urn = _get_author_urn()
@@ -384,7 +391,22 @@ def post_to_linkedin_with_image(post_text, image_urn=None):
     logger.info("Preparing LinkedIn post...")
     
     if not ACCESS_TOKEN:
-        raise ValueError("access_token not set in .env")
+        if IS_GITHUB_ACTIONS:
+            # List all env vars that start with LINKEDIN or access_token for debugging
+            linkedin_vars = {k: '***' if v else 'NOT SET' for k, v in os.environ.items() 
+                           if 'LINKEDIN' in k.upper() or 'ACCESS_TOKEN' in k.upper() or 'PERSON' in k.upper()}
+            logger.error(f"LinkedIn-related environment variables: {linkedin_vars}")
+            raise ValueError(
+                "LINKEDIN_ACCESS_TOKEN secret is not set or not accessible.\n"
+                "Please add LINKEDIN_ACCESS_TOKEN secret in GitHub repository settings:\n"
+                "1. Go to your repository → Settings → Secrets and variables → Actions\n"
+                "2. Click 'New repository secret'\n"
+                "3. Name: LINKEDIN_ACCESS_TOKEN (must match exactly)\n"
+                "4. Value: Your LinkedIn access token\n"
+                "5. Make sure the workflow file uses: access_token: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}"
+            )
+        else:
+            raise ValueError("access_token not set in .env file")
     
     try:
         author_urn = _get_author_urn()
