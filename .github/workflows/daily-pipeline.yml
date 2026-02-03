@@ -35,7 +35,7 @@ jobs:
             echo "ERROR: LINKEDIN_ACCESS_TOKEN secret is not set!"
             exit 1
           fi
-          if [ -z "${{ secrets.PERSON_URN }}" ]; then
+          if [ -z "${{ secrets.LINKEDIN_PERSON_URN }}" ]; then
             echo "ERROR: LINKEDIN_PERSON_URN secret is not set!"
             exit 1
           fi
