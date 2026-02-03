@@ -2,10 +2,10 @@ name: Daily Pipeline
 
 on:
   schedule:
-    # TESTING: Runs every day at 12:35 PM PST (20:35 UTC)
-    # PST is UTC-8, so 12:35 PM PST = 8:35 PM UTC (20:35)
-    # TODO: Change back to 10:00 AM PST (18:00 UTC) after testing
-    - cron: '35 20 * * *'
+    # Runs every day at 10:00 AM PST (18:00 UTC)
+    # PST is UTC-8, so 10 AM PST = 6 PM UTC (18:00)
+    # Note: During PDT (daylight saving time, UTC-7), this will run at 11 AM instead of 10 AM
+    - cron: '0 18 * * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
