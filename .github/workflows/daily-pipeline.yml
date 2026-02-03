@@ -31,6 +31,19 @@ jobs:
       - name: Install dependencies
         run: uv sync
       
+      - name: Verify secrets are set
+        run: |
+          echo "Checking required secrets..."
+          if [ -z "${{ secrets.LINKEDIN_ACCESS_TOKEN }}" ]; then
+            echo "ERROR: LINKEDIN_ACCESS_TOKEN secret is not set!"
+            exit 1
+          fi
+          if [ -z "${{ secrets.PERSON_URN }}" ]; then
+            echo "ERROR: LINKEDIN_PERSON_URN secret is not set!"
+            exit 1
+          fi
+          echo "✓ All required secrets are set"
+      
       - name: Run daily workflow
         env:
           GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
@@ -44,5 +57,8 @@ jobs:
         run: |
           echo "Starting daily workflow at $(date)"
           echo "Timezone: $(date +%Z)"
+          echo "Verifying environment variables..."
+          echo "access_token is set: $([ -n "$access_token" ] && echo 'Yes' || echo 'No')"
+          echo "PERSON_URN is set: $([ -n "$PERSON_URN" ] && echo 'Yes' || echo 'No')"
           uv run daily_workflow.py
           echo "Workflow completed at $(date)"
