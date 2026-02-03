@@ -2,14 +2,19 @@ name: Daily Pipeline
 
 on:
   schedule:
-    # Runs every day at 10:00 AM PST (18:00 UTC)
-    # PST is UTC-8, so 10 AM PST = 6 PM UTC
+    # Runs every day at 10:00 AM Pacific Time
+    # Note: Pacific Time alternates between PST (UTC-8) and PDT (UTC-7) for daylight saving
+    # 10 AM PST = 18:00 UTC, 10 AM PDT = 17:00 UTC
+    # Using 18:00 UTC to target 10 AM PST (winter time)
+    # During PDT (summer), this will run at 11 AM instead of 10 AM
+    # To always run at 10 AM PT, you'd need to adjust manually for DST
     - cron: '0 18 * * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
   daily-job:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     
     steps:
       - name: Checkout code
@@ -20,23 +25,11 @@ jobs:
         with:
           python-version: '3.12'
       
-      - name: Install dependencies
-        run: |
-          pip install uv
-          uv sync
+      - name: Install uv
+        run: pip install uv
       
-      - name: Set up environment variables
-        env:
-          GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
-          GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
-          Groq_Api_Key: ${{ secrets.GROQ_API_KEY }}
-          Gemini_Api_Key: ${{ secrets.GEMINI_API_KEY }}
-          CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
-          access_token: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
-          PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
-        run: |
-          echo "Environment variables set"
+      - name: Install dependencies
+        run: uv sync
       
       - name: Run daily workflow
         env:
@@ -49,4 +42,7 @@ jobs:
           access_token: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
         run: |
+          echo "Starting daily workflow at $(date)"
+          echo "Timezone: $(date +%Z)"
           uv run daily_workflow.py
+          echo "Workflow completed at $(date)"
